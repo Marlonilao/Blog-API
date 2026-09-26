@@ -1,0 +1,13 @@
+node_modules/
+dist/
+
+# Real environment files hold secrets; only the .env.example files are committed.
+.env
+.env.*
+!.env.example
+
+# Made by `prisma generate`
+api/src/generated/
+
+*.log
+.DS_Store
