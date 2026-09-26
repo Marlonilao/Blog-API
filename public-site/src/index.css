@@ -2,3 +2,17 @@ body {
   font-family: system-ui, sans-serif;
   margin: 2rem;
 }
+
+.post-list {
+  list-style: none;
+  padding: 0;
+}
+
+.post-list h2 {
+  margin-bottom: 0.25rem;
+}
+
+.post-meta {
+  margin-top: 0;
+  color: #555;
+}

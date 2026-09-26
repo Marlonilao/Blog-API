@@ -1,8 +1,5 @@
 const request = require('supertest');
 const app = require('../src/app');
-const prisma = require('../src/lib/prisma');
-
-afterAll(() => prisma.$disconnect());
 
 // The allowed sites come from CORS_ORIGINS in .env.test.
 const allowedOrigins = process.env.CORS_ORIGINS.split(',');

@@ -6,3 +6,33 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  AUTHOR
+  READER
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      Role     @default(READER)
+  createdAt DateTime @default(now())
+
+  posts Post[]
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  title       String
+  body        String
+  // Empty while the post is unpublished.
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  // Empty until the title or body changes. Kept apart from an automatic
+  // "updated" time so publishing doesn't make a post look edited.
+  editedAt    DateTime?
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+}

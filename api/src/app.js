@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const prisma = require('./lib/prisma');
+const postsRouter = require('./routes/postsRouter');
 
 const app = express();
 
@@ -19,5 +20,7 @@ app.get('/health', async (req, res) => {
   await prisma.$queryRaw`SELECT 1`;
   res.json({ ok: true });
 });
+
+app.use('/posts', postsRouter);
 
 module.exports = app;
