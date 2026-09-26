@@ -26,28 +26,30 @@ You need Node 22 and PostgreSQL 16.
    cp author-site/.env.example author-site/.env
    ```
 
-3. Install everything (this also generates the Prisma client):
+3. Install each app's dependencies (for the API this also generates the Prisma client):
 
    ```sh
-   npm run install:all
+   cd api && npm install && cd ..
+   cd public-site && npm install && cd ..
+   cd author-site && npm install && cd ..
    ```
 
 ## Running the apps
 
 Start each app in its own terminal:
 
-| App         | Command              | Address               |
-| ----------- | -------------------- | --------------------- |
-| API         | `npm run dev:api`    | http://localhost:3000 |
-| Public site | `npm run dev:public` | http://localhost:5173 |
-| Author site | `npm run dev:author` | http://localhost:5174 |
+| App         | Command                         | Address               |
+| ----------- | ------------------------------- | --------------------- |
+| API         | `cd api && npm run dev`         | http://localhost:3000 |
+| Public site | `cd public-site && npm run dev` | http://localhost:5173 |
+| Author site | `cd author-site && npm run dev` | http://localhost:5174 |
 
 Both sites should say "API is connected". `GET /health` on the API returns `{ "ok": true }`.
 
 ## Tests
 
 ```sh
-npm test
+cd api && npm test
 ```
 
 This runs the API's Jest + Supertest tests against the test database from `api/.env.test`. The sites are checked by hand in the browser.
