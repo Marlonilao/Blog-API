@@ -67,3 +67,56 @@ describe('GET /posts', () => {
     expect(res.text).not.toContain('secret-hash');
   });
 });
+
+describe('GET /posts/:postId', () => {
+  it('shows a published post in full', async () => {
+    const author = await createAuthor({ username: 'marlon' });
+    const post = await createPost(author, {
+      title: 'Hello',
+      body: 'First paragraph.\n\nSecond paragraph.',
+      publishedAt: new Date('2026-09-26T10:00:00Z'),
+    });
+
+    const res = await request(app).get(`/posts/${post.id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      id: post.id,
+      title: 'Hello',
+      body: 'First paragraph.\n\nSecond paragraph.',
+      publishedAt: '2026-09-26T10:00:00.000Z',
+      createdAt: post.createdAt.toISOString(),
+      editedAt: null,
+      author: { username: 'marlon' },
+    });
+  });
+
+  it('hides an unpublished post as if it did not exist', async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: null });
+
+    const res = await request(app).get(`/posts/${post.id}`);
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Post not found' });
+  });
+
+  it('gives 404 for a post that does not exist', async () => {
+    const res = await request(app).get('/posts/999');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Post not found' });
+  });
+
+  it('gives 404 for an address that is not a plain post id', async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: new Date() });
+    // Each of these could be read as the number 1 by accident.
+    expect(post.id).toBe(1);
+
+    for (const postId of ['abc', '01', '1.0', '1e0']) {
+      const res = await request(app).get(`/posts/${postId}`);
+      expect(res.status).toBe(404);
+    }
+  });
+});
