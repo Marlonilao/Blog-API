@@ -2,3 +2,67 @@ body {
   font-family: system-ui, sans-serif;
   margin: 2rem;
 }
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.site-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 20rem;
+}
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-error {
+  color: #b00020;
+  margin: 0;
+}
+
+.post-list {
+  list-style: none;
+  padding: 0;
+}
+
+.post-list h2 {
+  margin-bottom: 0.25rem;
+}
+
+.post-meta {
+  margin-top: 0;
+  color: #555;
+}
+
+/* A small badge showing whether the post is published. */
+.status {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.status.published {
+  background: #e3f4e6;
+  color: #1b5e20;
+}
+
+.status.unpublished {
+  background: #fdecc8;
+  color: #7a4f00;
+}

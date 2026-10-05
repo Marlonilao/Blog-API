@@ -1,6 +1,11 @@
 const request = require('supertest');
 const app = require('../src/app');
-const { createAuthor, createPost } = require('./helpers/factories');
+const {
+  createAuthor,
+  createPost,
+  createUser,
+  logIn,
+} = require('./helpers/factories');
 
 describe('GET /posts', () => {
   it('shows visitors only published posts', async () => {
@@ -65,6 +70,62 @@ describe('GET /posts', () => {
     ]);
     expect(res.text).not.toContain('password');
     expect(res.text).not.toContain('secret-hash');
+  });
+});
+
+describe('GET /posts with a token', () => {
+  it('shows the author every post, unpublished ones first', async () => {
+    const author = await createAuthor();
+    await createPost(author, {
+      title: 'Older published',
+      publishedAt: new Date('2026-09-01'),
+    });
+    await createPost(author, {
+      title: 'Newer published',
+      publishedAt: new Date('2026-09-20'),
+    });
+    await createPost(author, { title: 'Unpublished', publishedAt: null });
+    const token = await logIn(author);
+
+    const res = await request(app)
+      .get('/posts')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(
+      res.body.map((post) => [post.title, post.publishedAt !== null]),
+    ).toEqual([
+      ['Unpublished', false],
+      ['Newer published', true],
+      ['Older published', true],
+    ]);
+  });
+
+  it("shows a reader only published posts, even with a reader's token", async () => {
+    const author = await createAuthor();
+    await createPost(author, { title: 'Published', publishedAt: new Date() });
+    await createPost(author, { title: 'Unpublished', publishedAt: null });
+    const token = await logIn(await createUser());
+
+    const res = await request(app)
+      .get('/posts')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.map((post) => post.title)).toEqual(['Published']);
+  });
+
+  it('treats a bad token like a visitor instead of failing', async () => {
+    const author = await createAuthor();
+    await createPost(author, { title: 'Published', publishedAt: new Date() });
+    await createPost(author, { title: 'Unpublished', publishedAt: null });
+
+    const res = await request(app)
+      .get('/posts')
+      .set('Authorization', 'Bearer not-a-real-token');
+
+    expect(res.status).toBe(200);
+    expect(res.body.map((post) => post.title)).toEqual(['Published']);
   });
 });
 
