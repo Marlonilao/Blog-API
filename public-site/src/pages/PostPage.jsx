@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
-import { getJson } from '../api';
-import { formatDate } from '../formatDate';
 import NotFound from './NotFound';
+
+// Shows a date like "Sep 26, 2026".
+function formatDate(isoString) {
+  return new Date(isoString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
 function PostPage() {
   const { postId } = useParams();
@@ -17,14 +24,19 @@ function Post({ postId }) {
   const [status, setStatus] = useState('loading');
 
   useEffect(() => {
-    getJson(`/posts/${postId}`)
-      .then((data) => {
-        setPost(data);
-        setStatus('ready');
+    // VITE_API_URL (from .env) is where the API lives.
+    fetch(`${import.meta.env.VITE_API_URL}/posts/${postId}`)
+      .then(async (res) => {
+        if (res.status === 404) {
+          setStatus('not-found');
+        } else if (!res.ok) {
+          setStatus('error');
+        } else {
+          setPost(await res.json());
+          setStatus('ready');
+        }
       })
-      .catch((error) => {
-        setStatus(error.status === 404 ? 'not-found' : 'error');
-      });
+      .catch(() => setStatus('error'));
   }, [postId]);
 
   if (status === 'not-found') return <NotFound />;

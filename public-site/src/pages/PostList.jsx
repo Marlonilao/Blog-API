@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { getJson } from '../api';
-import { formatDate } from '../formatDate';
+
+// Shows a date like "Sep 26, 2026".
+function formatDate(isoString) {
+  return new Date(isoString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
 function PostList() {
   const [posts, setPosts] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    getJson('/posts')
+    // VITE_API_URL (from .env) is where the API lives.
+    fetch(`${import.meta.env.VITE_API_URL}/posts`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+        return res.json();
+      })
       .then(setPosts)
       .catch(() => setError('Could not load the posts. Try again later.'));
   }, []);
