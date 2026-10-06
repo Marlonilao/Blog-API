@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
 const prisma = require('./lib/prisma');
 const authRouter = require('./routes/authRouter');
 const postsRouter = require('./routes/postsRouter');
@@ -12,6 +13,12 @@ const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+// Prints one short line per request in the terminal, like
+// "GET /posts 200 512 - 4.211 ms". Turned off while tests run, so it
+// doesn't bury the test results. (Jest sets NODE_ENV to "test".)
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan('dev'));
+}
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
