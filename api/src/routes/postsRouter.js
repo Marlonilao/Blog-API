@@ -4,6 +4,7 @@ const {
   getPost,
   createPost,
   editPost,
+  publishPost,
   deletePost,
 } = require('../controllers/postsController');
 const { readUser, requireAuthor } = require('../middleware/auth');
@@ -18,6 +19,7 @@ postsRouter.get('/:postId', readUser, getPost);
 // controller runs.
 postsRouter.post('/', requireAuthor, createPost);
 postsRouter.put('/:postId', requireAuthor, editPost);
+postsRouter.patch('/:postId', requireAuthor, publishPost);
 postsRouter.delete('/:postId', requireAuthor, deletePost);
 
 module.exports = postsRouter;

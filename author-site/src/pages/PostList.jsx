@@ -59,6 +59,37 @@ function PostList({ onNew, onEdit }) {
     }
   }
 
+  // Publishes an unpublished post, or unpublishes a published one.
+  async function handlePublish(post) {
+    setError(null);
+    try {
+      // VITE_API_URL (from .env) is where the API lives. The token was saved
+      // by LoginPage.jsx.
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/posts/${post.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ published: !post.publishedAt }),
+        },
+      );
+      if (res.status === 401) {
+        setError('Your login has expired. Log out and log in again.');
+        return;
+      }
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+      // Swap in the post the API sent back, so its status and button
+      // change on screen straight away.
+      const updated = await res.json();
+      setPosts(posts.map((p) => (p.id === updated.id ? updated : p)));
+    } catch {
+      setError('Could not change the post. Try again later.');
+    }
+  }
+
   if (!posts) return <p>{error || 'Loading...'}</p>;
 
   return (
@@ -88,6 +119,9 @@ function PostList({ onNew, onEdit }) {
               {post.editedAt && ' (edited)'}
             </p>
             <div className="button-row">
+              <button type="button" onClick={() => handlePublish(post)}>
+                {post.publishedAt ? 'Unpublish' : 'Publish'}
+              </button>
               <button type="button" onClick={() => onEdit(post.id)}>
                 Edit
               </button>

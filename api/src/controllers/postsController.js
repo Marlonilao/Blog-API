@@ -119,6 +119,36 @@ const editPost = async (req, res) => {
 
 // req.user is the author: requireAuthor checked that first
 // (see postsRouter.js).
+const publishPost = async (req, res) => {
+  const id = parseId(req.params.postId);
+  if (!id) return res.status(404).json({ error: 'Post not found' });
+
+  const { published } = req.body ?? {};
+  if (typeof published !== 'boolean') {
+    return res.status(400).json({ error: 'Published must be true or false' });
+  }
+
+  const existing = await prisma.post.findUnique({ where: { id } });
+  if (!existing) return res.status(404).json({ error: 'Post not found' });
+
+  // Publishing sets the date to now, unless the post is already
+  // published: then it keeps its date. Unpublishing clears the date.
+  const publishedAt = published ? (existing.publishedAt ?? new Date()) : null;
+
+  const post = await prisma.post.update({
+    where: { id },
+    // The edited date isn't touched, so publishing doesn't make a post
+    // show "(edited)".
+    data: { publishedAt },
+    // Only the list fields: the author site swaps this into its post list,
+    // which doesn't show the body.
+    select: postSummary,
+  });
+  res.json(post);
+};
+
+// req.user is the author: requireAuthor checked that first
+// (see postsRouter.js).
 const deletePost = async (req, res) => {
   const id = parseId(req.params.postId);
   if (!id) return res.status(404).json({ error: 'Post not found' });
@@ -131,4 +161,11 @@ const deletePost = async (req, res) => {
   res.status(204).end();
 };
 
-module.exports = { listPosts, getPost, createPost, editPost, deletePost };
+module.exports = {
+  listPosts,
+  getPost,
+  createPost,
+  editPost,
+  publishPost,
+  deletePost,
+};
