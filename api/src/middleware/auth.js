@@ -35,4 +35,17 @@ function requireUser(req, res, next) {
   next();
 }
 
-module.exports = { readUser, requireUser };
+// Lets the request through only with a valid token from the author.
+// A reader gets 403: they are logged in, just not allowed.
+function requireAuthor(req, res, next) {
+  req.user = readToken(req);
+  if (!req.user) {
+    return res.status(401).json({ error: 'Please log in first' });
+  }
+  if (req.user.role !== 'AUTHOR') {
+    return res.status(403).json({ error: 'Only the author can do that' });
+  }
+  next();
+}
+
+module.exports = { readUser, requireUser, requireAuthor };

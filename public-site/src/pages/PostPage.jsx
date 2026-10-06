@@ -49,6 +49,7 @@ function Post({ postId }) {
       <h1>{post.title}</h1>
       <p className="post-meta">
         By {post.author.username} on {formatDate(post.publishedAt)}
+        {post.editedAt && ' (edited)'}
       </p>
       <p className="post-body">{post.body}</p>
     </article>

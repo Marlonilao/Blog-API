@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import LoginPage from './pages/LoginPage';
 import PostList from './pages/PostList';
+import PostForm from './pages/PostForm';
 
 function App() {
   // The login token is kept in the browser's localStorage, so the author
@@ -11,6 +12,9 @@ function App() {
     localStorage.getItem('token') ? undefined : null,
   );
   const [error, setError] = useState(null);
+  // Which screen to show once logged in: 'list', 'new', or the id of the
+  // post being edited.
+  const [screen, setScreen] = useState('list');
 
   // After a reload, ask the API who the saved token belongs to.
   useEffect(() => {
@@ -38,6 +42,7 @@ function App() {
   function logOut() {
     localStorage.removeItem('token');
     setUser(null);
+    setScreen('list');
   }
 
   let content;
@@ -47,8 +52,23 @@ function App() {
     content = <p>Loading...</p>;
   } else if (user === null) {
     content = <LoginPage onLogIn={setUser} />;
+  } else if (screen === 'list') {
+    content = (
+      <PostList
+        onNew={() => setScreen('new')}
+        onEdit={(postId) => setScreen(postId)}
+      />
+    );
   } else {
-    content = <PostList />;
+    content = (
+      <PostForm
+        // A fresh form for each post, so one post's text never shows up
+        // in another's form.
+        key={screen}
+        postId={screen === 'new' ? null : screen}
+        onDone={() => setScreen('list')}
+      />
+    );
   }
 
   return (
