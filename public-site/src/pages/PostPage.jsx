@@ -11,6 +11,14 @@ function formatDate(isoString) {
   });
 }
 
+// Shows a time like "3:45 PM", in the reader's own time zone.
+function formatTime(isoString) {
+  return new Date(isoString).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 function PostPage() {
   const { postId } = useParams();
   // The key gives every post its own fresh copy of <Post>, so moving from
@@ -52,7 +60,52 @@ function Post({ postId }) {
         {post.editedAt && ' (edited)'}
       </p>
       <p className="post-body">{post.body}</p>
+      <Comments postId={postId} />
     </article>
+  );
+}
+
+// Only shown once the post itself has loaded, so a missing or unpublished
+// post never gets this far.
+function Comments({ postId }) {
+  const [comments, setComments] = useState([]);
+  // One of: 'loading', 'ready' or 'error'.
+  const [status, setStatus] = useState('loading');
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/posts/${postId}/comments`)
+      .then(async (res) => {
+        if (!res.ok) {
+          setStatus('error');
+        } else {
+          setComments(await res.json());
+          setStatus('ready');
+        }
+      })
+      .catch(() => setStatus('error'));
+  }, [postId]);
+
+  return (
+    <section>
+      <h2>Comments</h2>
+      {status === 'loading' && <p>Loading comments...</p>}
+      {status === 'error' && (
+        <p>Could not load the comments. Try again later.</p>
+      )}
+      {status === 'ready' && comments.length === 0 && <p>No comments yet.</p>}
+      <ul className="comment-list">
+        {comments.map((comment) => (
+          <li key={comment.id}>
+            <p className="post-meta">
+              {comment.user.username} on {formatDate(comment.createdAt)} at{' '}
+              {formatTime(comment.createdAt)}
+              {comment.editedAt && ' (edited)'}
+            </p>
+            <p className="post-body">{comment.body}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

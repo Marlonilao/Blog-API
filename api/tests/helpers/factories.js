@@ -38,6 +38,17 @@ function createPost(author, data = {}) {
   });
 }
 
+function createComment(post, user, data = {}) {
+  return prisma.comment.create({
+    data: {
+      body: 'A comment.',
+      postId: post.id,
+      userId: user.id,
+      ...data,
+    },
+  });
+}
+
 // Logs a test user in through the API, like a site would, and gives back
 // their token.
 async function logIn(user, password = DEFAULT_PASSWORD) {
@@ -51,6 +62,7 @@ module.exports = {
   createUser,
   createAuthor,
   createPost,
+  createComment,
   logIn,
   DEFAULT_PASSWORD,
 };

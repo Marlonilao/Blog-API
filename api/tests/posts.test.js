@@ -1,8 +1,10 @@
 const request = require('supertest');
 const app = require('../src/app');
+const prisma = require('../src/lib/prisma');
 const {
   createAuthor,
   createPost,
+  createComment,
   createUser,
   logIn,
 } = require('./helpers/factories');
@@ -367,6 +369,20 @@ describe('DELETE /posts/:postId', () => {
     expect(res.status).toBe(204);
     const after = await request(app).get(`/posts/${post.id}`);
     expect(after.status).toBe(404);
+  });
+
+  it("deletes the post's comments along with it", async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: new Date() });
+    await createComment(post, await createUser());
+    await createComment(post, author);
+    const token = await logIn(author);
+
+    await request(app)
+      .delete(`/posts/${post.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(await prisma.comment.count()).toBe(0);
   });
 
   it('gives 404 for a post that does not exist', async () => {

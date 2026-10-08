@@ -1,4 +1,5 @@
-// Creates the blog's single author and a few sample posts.
+// Creates the blog's single author, a few sample posts, a sample reader
+// and some comments.
 // Run it with `npm run seed`. Running it again doesn't create duplicates.
 require('dotenv').config({ quiet: true });
 const bcrypt = require('bcryptjs');
@@ -20,6 +21,16 @@ const samplePosts = [
     body: 'Only the author can see this one.',
     publishedAt: null,
   },
+];
+
+// A reader to write the sample comments. The password is only for trying
+// the site out on your own computer.
+const sampleReader = { username: 'sample_reader', password: 'reader-password' };
+
+// Comments on the first sample post, in the order they were written.
+const sampleComments = [
+  { from: 'reader', body: 'Great start! Looking forward to more.' },
+  { from: 'author', body: 'Thanks for reading!' },
 ];
 
 async function main() {
@@ -52,7 +63,33 @@ async function main() {
     }
   }
 
-  console.log(`Seeded author "${author.username}" and sample posts.`);
+  const reader = await prisma.user.upsert({
+    where: { username: sampleReader.username },
+    update: {},
+    create: {
+      username: sampleReader.username,
+      password: await bcrypt.hash(sampleReader.password, 10),
+    },
+  });
+
+  const firstPost = await prisma.post.findFirst({
+    where: { title: samplePosts[0].title, authorId: author.id },
+  });
+  for (const comment of sampleComments) {
+    const user = comment.from === 'author' ? author : reader;
+    const existing = await prisma.comment.findFirst({
+      where: { body: comment.body, postId: firstPost.id, userId: user.id },
+    });
+    if (!existing) {
+      await prisma.comment.create({
+        data: { body: comment.body, postId: firstPost.id, userId: user.id },
+      });
+    }
+  }
+
+  console.log(
+    `Seeded author "${author.username}", reader "${reader.username}", sample posts and comments.`,
+  );
 }
 
 main()

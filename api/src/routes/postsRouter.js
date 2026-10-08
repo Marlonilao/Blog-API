@@ -6,6 +6,7 @@ const {
   editPost,
   publishPost,
   deletePost,
+  listComments,
 } = require('../controllers/postsController');
 const { readUser, requireAuthor } = require('../middleware/auth');
 
@@ -15,6 +16,7 @@ const postsRouter = Router();
 // post, unpublished ones too.
 postsRouter.get('/', readUser, listPosts);
 postsRouter.get('/:postId', readUser, getPost);
+postsRouter.get('/:postId/comments', readUser, listComments);
 // requireAuthor turns away visitors (401) and readers (403) before the
 // controller runs.
 postsRouter.post('/', requireAuthor, createPost);

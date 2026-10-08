@@ -19,7 +19,8 @@ model User {
   role      Role     @default(READER)
   createdAt DateTime @default(now())
 
-  posts Post[]
+  posts    Post[]
+  comments Comment[]
 }
 
 model Post {
@@ -35,4 +36,21 @@ model Post {
 
   authorId Int
   author   User @relation(fields: [authorId], references: [id])
+
+  comments Comment[]
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  body      String
+  createdAt DateTime  @default(now())
+  // Empty until the body changes.
+  editedAt  DateTime?
+
+  // onDelete: Cascade means deleting a post deletes its comments too.
+  postId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 }

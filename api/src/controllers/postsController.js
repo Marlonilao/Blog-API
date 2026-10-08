@@ -161,6 +161,39 @@ const deletePost = async (req, res) => {
   res.status(204).end();
 };
 
+const listComments = async (req, res) => {
+  const id = parseId(req.params.postId);
+  if (!id) return res.status(404).json({ error: 'Post not found' });
+
+  // req.user comes from the token, via readUser (see postsRouter.js).
+  // The author can see the comments on any post. Everyone else only sees
+  // them on published posts.
+  const isAuthor = req.user?.role === 'AUTHOR';
+
+  const post = await prisma.post.findFirst({
+    where: isAuthor ? { id } : { id, publishedAt: { not: null } },
+  });
+  // Same answer as for the post itself, so an unpublished post's comments
+  // don't give away that it exists.
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+
+  const comments = await prisma.comment.findMany({
+    where: { postId: id },
+    // Newest first, so the latest comment is at the top. Comments written
+    // at the same moment fall back to the newest id first.
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    // Picked one by one, so the commenter's password can never slip out.
+    select: {
+      id: true,
+      body: true,
+      createdAt: true,
+      editedAt: true,
+      user: { select: { username: true } },
+    },
+  });
+  res.json(comments);
+};
+
 module.exports = {
   listPosts,
   getPost,
@@ -168,4 +201,5 @@ module.exports = {
   editPost,
   publishPost,
   deletePost,
+  listComments,
 };

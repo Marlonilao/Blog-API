@@ -60,3 +60,13 @@ header {
   color: #b00020;
   margin: 0;
 }
+
+.comment-list {
+  list-style: none;
+  padding: 0;
+}
+
+.comment-list li {
+  border-top: 1px solid #ddd;
+  padding-top: 0.5rem;
+}
