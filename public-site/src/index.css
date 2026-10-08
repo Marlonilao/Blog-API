@@ -28,3 +28,35 @@ body {
 .post-body {
   white-space: pre-wrap;
 }
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 20rem;
+}
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-hint {
+  color: #555;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.form-error {
+  color: #b00020;
+  margin: 0;
+}
