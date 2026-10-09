@@ -159,9 +159,11 @@ textarea:focus {
   align-self: flex-start;
 }
 
-/* The log-in (and sign-up) form sits in a small white card. */
+/* The log-in (and sign-up) form sits in a small white card, centred
+   on the page. */
 .login-form {
   max-width: 22rem;
+  margin: 2rem auto 0;
   padding: 1.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
