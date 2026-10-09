@@ -441,6 +441,21 @@ describe('PUT /posts/:postId/comments/:commentId', () => {
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ error: 'Comment not found' });
   });
+
+  it('lets the author change their own comment on an unpublished post', async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: null });
+    const comment = await createComment(post, author, { body: 'Typo hree' });
+    const token = await logIn(author);
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Typo here' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.body).toBe('Typo here');
+  });
 });
 
 describe('DELETE /posts/:postId/comments/:commentId', () => {
@@ -458,6 +473,38 @@ describe('DELETE /posts/:postId/comments/:commentId', () => {
 
     expect(res.status).toBe(204);
     const list = await request(app).get(`/posts/${post.id}/comments`);
+    expect(list.body).toEqual([]);
+  });
+
+  it("lets the author remove a reader's comment", async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: new Date() });
+    const comment = await createComment(post, await createUser());
+    const token = await logIn(author);
+
+    const res = await request(app)
+      .delete(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(204);
+    const list = await request(app).get(`/posts/${post.id}/comments`);
+    expect(list.body).toEqual([]);
+  });
+
+  it('lets the author remove a comment on an unpublished post', async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: null });
+    const comment = await createComment(post, await createUser());
+    const token = await logIn(author);
+
+    const res = await request(app)
+      .delete(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(204);
+    const list = await request(app)
+      .get(`/posts/${post.id}/comments`)
+      .set('Authorization', `Bearer ${token}`);
     expect(list.body).toEqual([]);
   });
 

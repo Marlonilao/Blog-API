@@ -226,6 +226,8 @@ const createComment = async (req, res) => {
 
 // Finds a comment on a published post, or null. A comment on an
 // unpublished post counts as missing, so it doesn't give the post away.
+// (editComment and deleteComment let the author skip this, to reach
+// every post.)
 function findComment(postId, commentId) {
   return prisma.comment.findFirst({
     where: { id: commentId, postId, post: { publishedAt: { not: null } } },
@@ -241,7 +243,13 @@ const editComment = async (req, res) => {
     return res.status(404).json({ error: 'Comment not found' });
   }
 
-  const existing = await findComment(postId, commentId);
+  // The author sees the comments on every post (see listComments), so
+  // they can reach them on unpublished posts too. They can still only
+  // edit their own, just below.
+  const existing =
+    req.user.role === 'AUTHOR'
+      ? await prisma.comment.findFirst({ where: { id: commentId, postId } })
+      : await findComment(postId, commentId);
   if (!existing) return res.status(404).json({ error: 'Comment not found' });
 
   // Only the person who wrote it, so nobody can put words in someone
@@ -282,10 +290,17 @@ const deleteComment = async (req, res) => {
     return res.status(404).json({ error: 'Comment not found' });
   }
 
-  const existing = await findComment(postId, commentId);
+  // The author sees the comments on every post (see listComments), so
+  // they can delete them on unpublished posts too.
+  const isAuthor = req.user.role === 'AUTHOR';
+  const existing = isAuthor
+    ? await prisma.comment.findFirst({ where: { id: commentId, postId } })
+    : await findComment(postId, commentId);
   if (!existing) return res.status(404).json({ error: 'Comment not found' });
 
-  if (existing.userId !== req.user.id) {
+  // The writer can delete their own comment. The author can delete any
+  // comment, to remove spam or abuse.
+  if (existing.userId !== req.user.id && !isAuthor) {
     return res
       .status(403)
       .json({ error: 'You can only delete your own comments' });
