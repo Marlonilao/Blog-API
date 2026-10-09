@@ -78,3 +78,45 @@ header {
   display: flex;
   gap: 0.5rem;
 }
+
+/* A post title that opens the post when clicked. A button, so it works
+   with the keyboard too, made to look like a link. */
+.title-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: #0645ad;
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Keeps the line breaks typed in the post or comment, so paragraphs stay
+   apart. */
+.post-body {
+  white-space: pre-wrap;
+}
+
+.comment-list {
+  list-style: none;
+  padding: 0;
+}
+
+.comment-list li {
+  border-top: 1px solid #ddd;
+  padding-top: 0.5rem;
+}
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 30rem;
+}
+
+.comment-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}

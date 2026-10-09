@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import LoginPage from './pages/LoginPage';
 import PostList from './pages/PostList';
 import PostForm from './pages/PostForm';
+import PostPage from './pages/PostPage';
 
 function App() {
   // The login token is kept in the browser's localStorage, so the author
@@ -12,9 +13,10 @@ function App() {
     localStorage.getItem('token') ? undefined : null,
   );
   const [error, setError] = useState(null);
-  // Which screen to show once logged in: 'list', 'new', or the id of the
-  // post being edited.
+  // Which screen to show once logged in: 'list', 'new', 'edit' or 'view'.
   const [screen, setScreen] = useState('list');
+  // The post being edited or viewed. Only used on those two screens.
+  const [postId, setPostId] = useState(null);
 
   // After a reload, ask the API who the saved token belongs to.
   useEffect(() => {
@@ -56,16 +58,27 @@ function App() {
     content = (
       <PostList
         onNew={() => setScreen('new')}
-        onEdit={(postId) => setScreen(postId)}
+        onEdit={(id) => {
+          setPostId(id);
+          setScreen('edit');
+        }}
+        onView={(id) => {
+          setPostId(id);
+          setScreen('view');
+        }}
       />
+    );
+  } else if (screen === 'view') {
+    content = (
+      <PostPage postId={postId} user={user} onBack={() => setScreen('list')} />
     );
   } else {
     content = (
       <PostForm
         // A fresh form for each post, so one post's text never shows up
         // in another's form.
-        key={screen}
-        postId={screen === 'new' ? null : screen}
+        key={screen === 'new' ? 'new' : postId}
+        postId={screen === 'new' ? null : postId}
         onDone={() => setScreen('list')}
       />
     );

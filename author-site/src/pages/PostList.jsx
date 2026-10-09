@@ -11,8 +11,9 @@ function formatDate(isoString) {
 
 // Every post, published or not. The API sends them all because the
 // request carries the author's token.
-// onNew and onEdit come from App.jsx: they switch to the post form.
-function PostList({ onNew, onEdit }) {
+// onNew, onEdit and onView come from App.jsx: they switch to the post
+// form or to the post's own page.
+function PostList({ onNew, onEdit, onView }) {
   const [posts, setPosts] = useState(null);
   const [error, setError] = useState(null);
 
@@ -106,7 +107,16 @@ function PostList({ onNew, onEdit }) {
       <ul className="post-list">
         {posts.map((post) => (
           <li key={post.id}>
-            <h2>{post.title}</h2>
+            <h2>
+              {/* Opens the post's page, with its body and comments. */}
+              <button
+                type="button"
+                className="title-link"
+                onClick={() => onView(post.id)}
+              >
+                {post.title}
+              </button>
+            </h2>
             <p className="post-meta">
               {post.publishedAt ? (
                 <>
