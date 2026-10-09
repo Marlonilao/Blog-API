@@ -63,7 +63,7 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<PostList />} />
-          <Route path="/posts/:postId" element={<PostPage />} />
+          <Route path="/posts/:postId" element={<PostPage user={user} />} />
           <Route path="/login" element={<LoginPage onLogIn={setUser} />} />
           <Route path="/signup" element={<SignupPage onLogIn={setUser} />} />
           <Route path="*" element={<NotFound />} />

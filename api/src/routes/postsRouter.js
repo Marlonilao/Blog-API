@@ -7,8 +7,9 @@ const {
   publishPost,
   deletePost,
   listComments,
+  createComment,
 } = require('../controllers/postsController');
-const { readUser, requireAuthor } = require('../middleware/auth');
+const { readUser, requireUser, requireAuthor } = require('../middleware/auth');
 
 const postsRouter = Router();
 
@@ -17,6 +18,9 @@ const postsRouter = Router();
 postsRouter.get('/', readUser, listPosts);
 postsRouter.get('/:postId', readUser, getPost);
 postsRouter.get('/:postId/comments', readUser, listComments);
+// requireUser turns away visitors (401). Readers and the author can both
+// comment.
+postsRouter.post('/:postId/comments', requireUser, createComment);
 // requireAuthor turns away visitors (401) and readers (403) before the
 // controller runs.
 postsRouter.post('/', requireAuthor, createPost);

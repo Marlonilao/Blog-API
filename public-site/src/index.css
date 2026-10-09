@@ -70,3 +70,16 @@ header {
   border-top: 1px solid #ddd;
   padding-top: 0.5rem;
 }
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 30rem;
+}
+
+.comment-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}

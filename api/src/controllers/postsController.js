@@ -194,6 +194,39 @@ const listComments = async (req, res) => {
   res.json(comments);
 };
 
+// req.user is whoever is logged in, reader or author: requireUser checked
+// that first (see postsRouter.js).
+const createComment = async (req, res) => {
+  const id = parseId(req.params.postId);
+  if (!id) return res.status(404).json({ error: 'Post not found' });
+
+  const { body } = req.body ?? {};
+  // Must be text with something in it besides spaces.
+  if (typeof body !== 'string' || !body.trim()) {
+    return res.status(400).json({ error: 'A comment cannot be empty' });
+  }
+
+  // Only published posts take comments, even from the author.
+  const post = await prisma.post.findFirst({
+    where: { id, publishedAt: { not: null } },
+  });
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+
+  const comment = await prisma.comment.create({
+    data: { body, postId: id, userId: req.user.id },
+    // The same fields as listComments, so the public site can add the new
+    // comment straight into its list.
+    select: {
+      id: true,
+      body: true,
+      createdAt: true,
+      editedAt: true,
+      user: { select: { username: true } },
+    },
+  });
+  res.status(201).json(comment);
+};
+
 module.exports = {
   listPosts,
   getPost,
@@ -202,4 +235,5 @@ module.exports = {
   publishPost,
   deletePost,
   listComments,
+  createComment,
 };

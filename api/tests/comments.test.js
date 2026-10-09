@@ -139,3 +139,114 @@ describe('GET /posts/:postId/comments', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('POST /posts/:postId/comments', () => {
+  it('lets a reader comment on a published post', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const reader = await createUser({ username: 'jane' });
+    const token = await logIn(reader);
+
+    const res = await request(app)
+      .post(`/posts/${post.id}/comments`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Nice post!' });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({
+      id: expect.any(Number),
+      body: 'Nice post!',
+      createdAt: expect.any(String),
+      editedAt: null,
+      user: { username: 'jane' },
+    });
+  });
+
+  it('lets the author comment on a published post', async () => {
+    const author = await createAuthor({ username: 'boss' });
+    const post = await createPost(author, { publishedAt: new Date() });
+    const token = await logIn(author);
+
+    const res = await request(app)
+      .post(`/posts/${post.id}/comments`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Thanks for reading!' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.user).toEqual({ username: 'boss' });
+  });
+
+  it("shows the new comment in the post's comment list", async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const token = await logIn(await createUser());
+
+    await request(app)
+      .post(`/posts/${post.id}/comments`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Saved for good' });
+    const res = await request(app).get(`/posts/${post.id}/comments`);
+
+    expect(res.body.map((comment) => comment.body)).toEqual(['Saved for good']);
+  });
+
+  it('refuses a visitor who is not logged in', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+
+    const res = await request(app)
+      .post(`/posts/${post.id}/comments`)
+      .send({ body: 'Hello' });
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Please log in first' });
+  });
+
+  it('rejects an empty comment', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const token = await logIn(await createUser());
+
+    for (const body of [{ body: '' }, { body: '   ' }, {}, { body: 42 }]) {
+      const res = await request(app)
+        .post(`/posts/${post.id}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ error: 'A comment cannot be empty' });
+    }
+  });
+
+  it('refuses comments on an unpublished post, even from the author', async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: null });
+
+    for (const user of [await createUser(), author]) {
+      const token = await logIn(user);
+      const res = await request(app)
+        .post(`/posts/${post.id}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ body: 'Sneaky' });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Post not found' });
+    }
+  });
+
+  it('gives 404 for a post that does not exist', async () => {
+    const token = await logIn(await createUser());
+
+    const res = await request(app)
+      .post('/posts/999/comments')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Hello?' });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Post not found' });
+  });
+});
