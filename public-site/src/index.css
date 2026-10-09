@@ -83,3 +83,8 @@ header {
   flex-direction: column;
   gap: 0.25rem;
 }
+
+.comment-actions {
+  display: flex;
+  gap: 0.5rem;
+}

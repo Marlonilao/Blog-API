@@ -11,6 +11,16 @@ const postSummary = {
   author: { select: { username: true } },
 };
 
+// The fields every comment response shows. Picked one by one, so the
+// commenter's password can never slip out.
+const commentFields = {
+  id: true,
+  body: true,
+  createdAt: true,
+  editedAt: true,
+  user: { select: { username: true } },
+};
+
 // Turns the post id from the address into a number, or null if it isn't
 // a plain id. Only digits with no leading zero count, so "abc", "01" and
 // "1.0" are all rejected. 2147483647 is the biggest id a Postgres
@@ -182,14 +192,7 @@ const listComments = async (req, res) => {
     // Newest first, so the latest comment is at the top. Comments written
     // at the same moment fall back to the newest id first.
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    // Picked one by one, so the commenter's password can never slip out.
-    select: {
-      id: true,
-      body: true,
-      createdAt: true,
-      editedAt: true,
-      user: { select: { username: true } },
-    },
+    select: commentFields,
   });
   res.json(comments);
 };
@@ -214,17 +217,83 @@ const createComment = async (req, res) => {
 
   const comment = await prisma.comment.create({
     data: { body, postId: id, userId: req.user.id },
-    // The same fields as listComments, so the public site can add the new
-    // comment straight into its list.
-    select: {
-      id: true,
-      body: true,
-      createdAt: true,
-      editedAt: true,
-      user: { select: { username: true } },
-    },
+    // Same fields as the comment list, so the public site can add the new
+    // comment straight into it.
+    select: commentFields,
   });
   res.status(201).json(comment);
+};
+
+// Finds a comment on a published post, or null. A comment on an
+// unpublished post counts as missing, so it doesn't give the post away.
+function findComment(postId, commentId) {
+  return prisma.comment.findFirst({
+    where: { id: commentId, postId, post: { publishedAt: { not: null } } },
+  });
+}
+
+// req.user is whoever is logged in: requireUser checked that first
+// (see postsRouter.js).
+const editComment = async (req, res) => {
+  const postId = parseId(req.params.postId);
+  const commentId = parseId(req.params.commentId);
+  if (!postId || !commentId) {
+    return res.status(404).json({ error: 'Comment not found' });
+  }
+
+  const existing = await findComment(postId, commentId);
+  if (!existing) return res.status(404).json({ error: 'Comment not found' });
+
+  // Only the person who wrote it, so nobody can put words in someone
+  // else's mouth. That includes the author.
+  if (existing.userId !== req.user.id) {
+    return res
+      .status(403)
+      .json({ error: 'You can only edit your own comments' });
+  }
+
+  const { body } = req.body ?? {};
+  // Must be text with something in it besides spaces.
+  if (typeof body !== 'string' || !body.trim()) {
+    return res.status(400).json({ error: 'A comment cannot be empty' });
+  }
+
+  const comment = await prisma.comment.update({
+    where: { id: commentId },
+    // The edited date makes the site show "(edited)", so it only changes
+    // when the body really did.
+    data: {
+      body,
+      editedAt: body !== existing.body ? new Date() : existing.editedAt,
+    },
+    // Same fields as the comment list, so the public site can swap the
+    // changed comment into it.
+    select: commentFields,
+  });
+  res.json(comment);
+};
+
+// req.user is whoever is logged in: requireUser checked that first
+// (see postsRouter.js).
+const deleteComment = async (req, res) => {
+  const postId = parseId(req.params.postId);
+  const commentId = parseId(req.params.commentId);
+  if (!postId || !commentId) {
+    return res.status(404).json({ error: 'Comment not found' });
+  }
+
+  const existing = await findComment(postId, commentId);
+  if (!existing) return res.status(404).json({ error: 'Comment not found' });
+
+  if (existing.userId !== req.user.id) {
+    return res
+      .status(403)
+      .json({ error: 'You can only delete your own comments' });
+  }
+
+  await prisma.comment.delete({ where: { id: commentId } });
+  // 204 means "done, nothing to send back".
+  res.status(204).end();
 };
 
 module.exports = {
@@ -236,4 +305,6 @@ module.exports = {
   deletePost,
   listComments,
   createComment,
+  editComment,
+  deleteComment,
 };

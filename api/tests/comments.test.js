@@ -250,3 +250,294 @@ describe('POST /posts/:postId/comments', () => {
     expect(res.body).toEqual({ error: 'Post not found' });
   });
 });
+
+describe('PUT /posts/:postId/comments/:commentId', () => {
+  it("lets the comment's writer change it and sets the edited date", async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const reader = await createUser({ username: 'jane' });
+    const comment = await createComment(post, reader, { body: 'Typo hree' });
+    const token = await logIn(reader);
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Typo here' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      id: comment.id,
+      body: 'Typo here',
+      createdAt: comment.createdAt.toISOString(),
+      editedAt: expect.any(String),
+      user: { username: 'jane' },
+    });
+  });
+
+  it('saves the change for good', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const reader = await createUser();
+    const comment = await createComment(post, reader);
+    const token = await logIn(reader);
+
+    await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Changed my mind' });
+    const res = await request(app).get(`/posts/${post.id}/comments`);
+
+    expect(res.body.map((c) => c.body)).toEqual(['Changed my mind']);
+    expect(res.body[0].editedAt).not.toBeNull();
+  });
+
+  it('leaves the edited date empty when the body is the same', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const reader = await createUser();
+    const comment = await createComment(post, reader, { body: 'Same' });
+    const token = await logIn(reader);
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Same' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.editedAt).toBeNull();
+  });
+
+  it('refuses another reader, and leaves the comment as it was', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const comment = await createComment(post, await createUser(), {
+      body: 'My words',
+    });
+    const token = await logIn(await createUser());
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Your words now' });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: 'You can only edit your own comments',
+    });
+    const list = await request(app).get(`/posts/${post.id}/comments`);
+    expect(list.body.map((c) => c.body)).toEqual(['My words']);
+  });
+
+  it('refuses another reader even when the body is empty', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const comment = await createComment(post, await createUser());
+    const token = await logIn(await createUser());
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: '' });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("refuses the author editing a reader's comment", async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: new Date() });
+    const comment = await createComment(post, await createUser());
+    const token = await logIn(author);
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Edited by the author' });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('refuses a visitor who is not logged in', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const comment = await createComment(post, await createUser());
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .send({ body: 'Hello' });
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Please log in first' });
+  });
+
+  it('rejects an empty body', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const reader = await createUser();
+    const comment = await createComment(post, reader);
+    const token = await logIn(reader);
+
+    for (const body of [{ body: '' }, { body: '   ' }, {}, { body: 42 }]) {
+      const res = await request(app)
+        .put(`/posts/${post.id}/comments/${comment.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(body);
+
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ error: 'A comment cannot be empty' });
+    }
+  });
+
+  it('gives 404 for a comment that does not exist', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const token = await logIn(await createUser());
+
+    for (const commentId of ['999', 'abc']) {
+      const res = await request(app)
+        .put(`/posts/${post.id}/comments/${commentId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ body: 'Hello?' });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Comment not found' });
+    }
+  });
+
+  it('gives 404 when the comment belongs to a different post', async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: new Date() });
+    const otherPost = await createPost(author, { publishedAt: new Date() });
+    const reader = await createUser();
+    const comment = await createComment(otherPost, reader);
+    const token = await logIn(reader);
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Wrong post' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('gives 404 when the post is unpublished', async () => {
+    const post = await createPost(await createAuthor(), { publishedAt: null });
+    const reader = await createUser();
+    const comment = await createComment(post, reader);
+    const token = await logIn(reader);
+
+    const res = await request(app)
+      .put(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ body: 'Still here?' });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Comment not found' });
+  });
+});
+
+describe('DELETE /posts/:postId/comments/:commentId', () => {
+  it("lets the comment's writer remove it", async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const reader = await createUser();
+    const comment = await createComment(post, reader);
+    const token = await logIn(reader);
+
+    const res = await request(app)
+      .delete(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(204);
+    const list = await request(app).get(`/posts/${post.id}/comments`);
+    expect(list.body).toEqual([]);
+  });
+
+  it('refuses another reader, and keeps the comment', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const comment = await createComment(post, await createUser(), {
+      body: 'Still here',
+    });
+    const token = await logIn(await createUser());
+
+    const res = await request(app)
+      .delete(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      error: 'You can only delete your own comments',
+    });
+    const list = await request(app).get(`/posts/${post.id}/comments`);
+    expect(list.body.map((c) => c.body)).toEqual(['Still here']);
+  });
+
+  it('refuses a visitor who is not logged in', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const comment = await createComment(post, await createUser());
+
+    const res = await request(app).delete(
+      `/posts/${post.id}/comments/${comment.id}`,
+    );
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Please log in first' });
+  });
+
+  it('gives 404 for a comment that does not exist', async () => {
+    const post = await createPost(await createAuthor(), {
+      publishedAt: new Date(),
+    });
+    const token = await logIn(await createUser());
+
+    for (const commentId of ['999', 'abc']) {
+      const res = await request(app)
+        .delete(`/posts/${post.id}/comments/${commentId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ error: 'Comment not found' });
+    }
+  });
+
+  it('gives 404 when the comment belongs to a different post', async () => {
+    const author = await createAuthor();
+    const post = await createPost(author, { publishedAt: new Date() });
+    const otherPost = await createPost(author, { publishedAt: new Date() });
+    const reader = await createUser();
+    const comment = await createComment(otherPost, reader);
+    const token = await logIn(reader);
+
+    const res = await request(app)
+      .delete(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('gives 404 when the post is unpublished', async () => {
+    const post = await createPost(await createAuthor(), { publishedAt: null });
+    const reader = await createUser();
+    const comment = await createComment(post, reader);
+    const token = await logIn(reader);
+
+    const res = await request(app)
+      .delete(`/posts/${post.id}/comments/${comment.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Comment not found' });
+  });
+});
