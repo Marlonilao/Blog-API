@@ -95,7 +95,7 @@ function PostList({ onNew, onEdit, onView }) {
 
   return (
     <>
-      <button type="button" onClick={onNew}>
+      <button type="button" className="primary" onClick={onNew}>
         New post
       </button>
       {error && (
@@ -135,7 +135,11 @@ function PostList({ onNew, onEdit, onView }) {
               <button type="button" onClick={() => onEdit(post.id)}>
                 Edit
               </button>
-              <button type="button" onClick={() => handleDelete(post)}>
+              <button
+                type="button"
+                className="danger"
+                onClick={() => handleDelete(post)}
+              >
                 Delete
               </button>
             </div>

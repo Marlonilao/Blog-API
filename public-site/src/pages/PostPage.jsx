@@ -258,7 +258,12 @@ function Comment({ postId, comment, isOwn, onSave, onDelete }) {
               >
                 Edit
               </button>
-              <button type="button" onClick={handleDelete} disabled={busy}>
+              <button
+                type="button"
+                className="danger"
+                onClick={handleDelete}
+                disabled={busy}
+              >
                 {busy ? 'Deleting...' : 'Delete'}
               </button>
             </div>

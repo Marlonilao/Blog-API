@@ -1,89 +1,266 @@
+/* The colours used across the site, kept in one place so they match. */
+:root {
+  --text: #334155;
+  --heading: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --header: #1e293b;
+  --accent: #0f766e;
+  --accent-dark: #115e59;
+  --accent-light: #f0fdfa;
+  --danger: #b91c1c;
+}
+
 body {
+  margin: 0;
   font-family: system-ui, sans-serif;
-  margin: 2rem;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--background);
 }
 
-.post-list {
-  list-style: none;
-  padding: 0;
-}
-
-.post-list h2 {
-  margin-bottom: 0.25rem;
-}
-
-.post-meta {
-  margin-top: 0;
-  color: #555;
-}
-
-.site-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: inherit;
-  text-decoration: none;
-}
-
-/* Keeps the line breaks the author typed, so paragraphs stay apart. */
-.post-body {
-  white-space: pre-wrap;
-}
-
+/* A white bar across the top. The side padding lines its contents up
+   with the 45rem-wide column below, and never goes under 1.5rem. */
 header {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   justify-content: space-between;
   align-items: center;
+  padding: 1rem max(1.5rem, calc((100% - 45rem) / 2));
+  background: var(--header);
+  color: #fff;
 }
 
-.login-form {
+.site-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+}
+
+.header-user {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+/* Links and buttons in the header are white, to show up on the colour. */
+header a {
+  color: #fff;
+  font-weight: 600;
+}
+
+header button {
+  color: #fff;
+  background: transparent;
+  border-color: #475569;
+}
+
+header button:hover {
+  background: #334155;
+}
+
+/* Everything below the header sits in one centred column. */
+main {
+  max-width: 45rem;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+h1,
+h2 {
+  line-height: 1.25;
+  color: var(--heading);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent-light);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* The main button of a form, like Save or Log in, stands out in blue. */
+button[type='submit'],
+button.primary {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+button[type='submit']:hover,
+button.primary:hover {
+  background: var(--accent-dark);
+}
+
+/* Buttons that remove something, so they're never pressed by mistake. */
+button.danger {
+  color: var(--danger);
+}
+
+input,
+textarea {
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+input:focus,
+textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Forms stack their fields, each label above its box. */
+.login-form,
+.comment-form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  max-width: 20rem;
 }
 
-.login-form label {
+.login-form label,
+.comment-form label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  font-weight: 500;
 }
 
-.form-hint {
-  color: #555;
-  font-size: 0.85rem;
+/* A form's button keeps its own width, instead of stretching across. */
+.comment-form > button {
+  align-self: flex-start;
+}
+
+/* The log-in (and sign-up) form sits in a small white card. */
+.login-form {
+  max-width: 22rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.login-form h1,
+.login-form h2 {
   margin: 0;
 }
 
 .form-error {
-  color: #b00020;
+  color: var(--danger);
+  font-size: 0.9rem;
   margin: 0;
+}
+
+/* Each post in the list is a white card. */
+.post-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.post-list li {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.15s;
+}
+
+/* The border turns the accent colour under the mouse. */
+.post-list li:hover {
+  border-color: var(--accent);
+}
+
+/* No extra space under whatever comes last in a card. */
+.post-list li > :last-child {
+  margin-bottom: 0;
+}
+
+.post-list h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.post-list h2 a {
+  color: var(--heading);
+}
+
+.post-meta {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Keeps the line breaks typed in a post or comment, so paragraphs stay
+   apart. */
+.post-body {
+  white-space: pre-wrap;
+}
+
+/* The comments sit below the post, after a dividing line. */
+section {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
 }
 
 .comment-list {
   list-style: none;
   padding: 0;
+  margin: 1.5rem 0 0;
 }
 
 .comment-list li {
-  border-top: 1px solid #ddd;
-  padding-top: 0.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
 }
 
-.comment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-width: 30rem;
+.comment-list .post-meta {
+  margin-bottom: 0.25rem;
 }
 
-.comment-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.comment-list .post-body {
+  margin: 0 0 0.5rem;
 }
 
+.form-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: -0.5rem 0 0;
+}
+
+/* A row of buttons side by side. */
 .comment-actions {
   display: flex;
   gap: 0.5rem;
