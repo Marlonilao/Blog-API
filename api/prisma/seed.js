@@ -1,6 +1,7 @@
 // Creates the blog's single author, a few sample posts, a sample reader
 // and some comments.
 // Run it with `npm run seed`. Running it again doesn't create duplicates.
+// With NODE_ENV=production it only creates the author.
 require('dotenv').config({ quiet: true });
 const bcrypt = require('bcryptjs');
 const prisma = require('../src/lib/prisma');
@@ -52,6 +53,13 @@ async function main() {
   // Never turn a reader who happens to have this username into the author.
   if (author.role !== 'AUTHOR') {
     throw new Error(`"${AUTHOR_USERNAME}" is already a reader's username.`);
+  }
+
+  // On the live site, only create the author. The sample reader's password
+  // is in this file for anyone to see, so it must never exist there.
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`Seeded author "${author.username}" (no sample data).`);
+    return;
   }
 
   for (const post of samplePosts) {
