@@ -6,6 +6,18 @@ The Odin Project's [Blog API](https://www.theodinproject.com/lessons/node-path-n
 - `public-site/`: React (Vite) site for readers
 - `author-site/`: React (Vite) site for the author
 
+## Live demo
+
+| App         | Address                                |
+| ----------- | -------------------------------------- |
+| Public site | https://marlon-blog.netlify.app        |
+| Author site | https://marlon-blog-author.netlify.app |
+| API         | https://blog-api-5sxb.onrender.com     |
+
+Anyone can sign up on the public site to leave comments. The author site needs the author's login.
+
+The API runs on Render's free plan, so it goes to sleep when nobody uses it. The first request after a while can take up to a minute. To check it's up, open [`/health`](https://blog-api-5sxb.onrender.com/health): it returns `{ "ok": true }` once the API and its database are both reachable.
+
 ## Setup
 
 You need Node 22 and PostgreSQL 16.
@@ -44,7 +56,7 @@ Start each app in its own terminal:
 | Public site | `cd public-site && npm run dev` | http://localhost:5173 |
 | Author site | `cd author-site && npm run dev` | http://localhost:5174 |
 
-Both sites should say "API is connected". `GET /health` on the API returns `{ "ok": true }`.
+`GET /health` on the API returns `{ "ok": true }` when it can reach the database.
 
 ## Tests
 
