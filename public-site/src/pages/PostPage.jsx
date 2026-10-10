@@ -55,15 +55,18 @@ function Post({ postId, user }) {
   if (status === 'loading') return <p>Loading...</p>;
 
   return (
-    <article>
-      <h1>{post.title}</h1>
-      <p className="post-meta">
-        By {post.author.username} on {formatDate(post.publishedAt)}
-        {post.editedAt && ' (edited)'}
-      </p>
-      <p className="post-body">{post.body}</p>
-      <Comments postId={postId} user={user} />
-    </article>
+    <>
+      <Link to="/">Back to posts</Link>
+      <article>
+        <h1>{post.title}</h1>
+        <p className="post-meta">
+          By {post.author.username} on {formatDate(post.publishedAt)}
+          {post.editedAt && ' (edited)'}
+        </p>
+        <p className="post-body">{post.body}</p>
+        <Comments postId={postId} user={user} />
+      </article>
+    </>
   );
 }
 
