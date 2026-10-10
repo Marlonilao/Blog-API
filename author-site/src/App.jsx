@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link, Route, Routes } from 'react-router';
 import LoginPage from './pages/LoginPage';
 import PostList from './pages/PostList';
 import PostForm from './pages/PostForm';
 import PostPage from './pages/PostPage';
+import NotFound from './pages/NotFound';
 
 function App() {
   // The login token is kept in the browser's localStorage, so the author
@@ -13,10 +15,6 @@ function App() {
     localStorage.getItem('token') ? undefined : null,
   );
   const [error, setError] = useState(null);
-  // Which screen to show once logged in: 'list', 'new', 'edit' or 'view'.
-  const [screen, setScreen] = useState('list');
-  // The post being edited or viewed. Only used on those two screens.
-  const [postId, setPostId] = useState(null);
 
   // After a reload, ask the API who the saved token belongs to.
   useEffect(() => {
@@ -44,7 +42,6 @@ function App() {
   function logOut() {
     localStorage.removeItem('token');
     setUser(null);
-    setScreen('list');
   }
 
   let content;
@@ -53,41 +50,29 @@ function App() {
   } else if (user === undefined) {
     content = <p>Loading...</p>;
   } else if (user === null) {
+    // Logged out: every address shows the login page. Once the author logs
+    // in, the page for that address shows instead.
     content = <LoginPage onLogIn={setUser} />;
-  } else if (screen === 'list') {
-    content = (
-      <PostList
-        onNew={() => setScreen('new')}
-        onEdit={(id) => {
-          setPostId(id);
-          setScreen('edit');
-        }}
-        onView={(id) => {
-          setPostId(id);
-          setScreen('view');
-        }}
-      />
-    );
-  } else if (screen === 'view') {
-    content = (
-      <PostPage postId={postId} user={user} onBack={() => setScreen('list')} />
-    );
   } else {
+    // Each address has its own page. ":postId" is filled in with the post's
+    // id, and the page reads it with useParams.
     content = (
-      <PostForm
-        // A fresh form for each post, so one post's text never shows up
-        // in another's form.
-        key={screen === 'new' ? 'new' : postId}
-        postId={screen === 'new' ? null : postId}
-        onDone={() => setScreen('list')}
-      />
+      <Routes>
+        <Route path="/" element={<PostList />} />
+        <Route path="/posts/new" element={<PostForm />} />
+        <Route path="/posts/:postId" element={<PostPage user={user} />} />
+        <Route path="/posts/:postId/edit" element={<PostForm />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     );
   }
 
   return (
     <>
       <header>
-        <span className="site-title">Blog (author)</span>
+        <Link to="/" className="site-title">
+          Blog (author)
+        </Link>
         {user && (
           <span className="header-user">
             Logged in as {user.username}{' '}

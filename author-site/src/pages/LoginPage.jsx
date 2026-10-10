@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 // onLogIn comes from App.jsx: calling it with the user swaps this page
-// for the post list.
+// for the page at the current address.
 function LoginPage({ onLogIn }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

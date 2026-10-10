@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
+import NotFound from './NotFound';
 
 // Shows a date like "Sep 26, 2026".
 function formatDate(isoString) {
@@ -18,11 +20,15 @@ function formatTime(isoString) {
 }
 
 // One post with its body and comments, published or not.
-// postId, user and onBack come from App.jsx. user is the logged-in author,
-// and onBack goes back to the post list.
-function PostPage({ postId, user, onBack }) {
+// user comes from App.jsx: the logged-in author. The post's id comes from
+// the address, like /posts/3.
+function PostPage({ user }) {
+  const { postId } = useParams();
+  const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [error, setError] = useState(null);
+  // True when there's no post with this id.
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     // VITE_API_URL (from .env) is where the API lives. The token was saved
@@ -30,17 +36,19 @@ function PostPage({ postId, user, onBack }) {
     fetch(`${import.meta.env.VITE_API_URL}/posts/${postId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     })
-      .then((res) => {
+      .then(async (res) => {
+        if (res.status === 404) return setNotFound(true);
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-        return res.json();
+        setPost(await res.json());
       })
-      .then(setPost)
       .catch(() => setError('Could not load this post. Try again later.'));
   }, [postId]);
 
+  if (notFound) return <NotFound />;
+
   return (
     <>
-      <button type="button" onClick={onBack}>
+      <button type="button" onClick={() => navigate('/')}>
         Back to posts
       </button>
       {!post && <p>{error || 'Loading...'}</p>}

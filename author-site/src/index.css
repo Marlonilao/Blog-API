@@ -305,23 +305,6 @@ main > .primary {
   color: #7a4f00;
 }
 
-/* A post title that opens the post when clicked. A button, so it works
-   with the keyboard too, made to look like a heading link. */
-.title-link {
-  padding: 0;
-  font-size: inherit;
-  font-weight: inherit;
-  text-align: left;
-  color: var(--heading);
-  background: none;
-  border: none;
-}
-
-.title-link:hover {
-  color: var(--accent);
-  background: none;
-}
-
 /* The "Back to posts" button above a post. */
 article {
   margin-top: 1.5rem;

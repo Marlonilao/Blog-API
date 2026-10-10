@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
 
 // Shows a date like "Sep 26, 2026".
 function formatDate(isoString) {
@@ -11,11 +12,11 @@ function formatDate(isoString) {
 
 // Every post, published or not. The API sends them all because the
 // request carries the author's token.
-// onNew, onEdit and onView come from App.jsx: they switch to the post
-// form or to the post's own page.
-function PostList({ onNew, onEdit, onView }) {
+function PostList() {
   const [posts, setPosts] = useState(null);
   const [error, setError] = useState(null);
+  // Goes to another address, for the buttons below.
+  const navigate = useNavigate();
 
   useEffect(() => {
     // VITE_API_URL (from .env) is where the API lives. The token was saved
@@ -95,7 +96,11 @@ function PostList({ onNew, onEdit, onView }) {
 
   return (
     <>
-      <button type="button" className="primary" onClick={onNew}>
+      <button
+        type="button"
+        className="primary"
+        onClick={() => navigate('/posts/new')}
+      >
         New post
       </button>
       {error && (
@@ -109,13 +114,7 @@ function PostList({ onNew, onEdit, onView }) {
           <li key={post.id}>
             <h2>
               {/* Opens the post's page, with its body and comments. */}
-              <button
-                type="button"
-                className="title-link"
-                onClick={() => onView(post.id)}
-              >
-                {post.title}
-              </button>
+              <Link to={`/posts/${post.id}`}>{post.title}</Link>
             </h2>
             <p className="post-meta">
               {post.publishedAt ? (
@@ -132,7 +131,10 @@ function PostList({ onNew, onEdit, onView }) {
               <button type="button" onClick={() => handlePublish(post)}>
                 {post.publishedAt ? 'Unpublish' : 'Publish'}
               </button>
-              <button type="button" onClick={() => onEdit(post.id)}>
+              <button
+                type="button"
+                onClick={() => navigate(`/posts/${post.id}/edit`)}
+              >
                 Edit
               </button>
               <button
